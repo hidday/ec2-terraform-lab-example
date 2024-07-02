@@ -13,7 +13,7 @@ variable "instance_type" {
   type        = string
 }
 
-variable "key_name" {
+variable "keypair_name" {
   description = "The name of the key pair"
   type        = string
 }
