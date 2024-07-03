@@ -94,7 +94,8 @@ resource "aws_instance" "main" {
 
   user_data = <<-EOF
               <powershell>
-              net user Administrator ${random_password.password.result}
+              $password = "${coalesce(var.admin_password, random_password.password.result)}"
+              net user Administrator $password
               </powershell>
               EOF
 
