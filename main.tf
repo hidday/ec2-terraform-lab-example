@@ -2,6 +2,14 @@ provider "aws" {
   region = var.region
 }
 
+provider "random" {}
+
+resource "random_password" "password" {
+  length           = 16
+  special          = true
+  override_special = "_%@"
+}
+
 resource "aws_vpc" "main" {
   cidr_block = "10.0.0.0/16"
 }
@@ -54,11 +62,6 @@ resource "aws_security_group" "main" {
   }
 }
 
-resource "aws_key_pair" "main" {
-  key_name   = var.key_name
-  public_key = var.key_pair_public_material
-}
-
 resource "aws_iam_role" "main" {
   name = "ec2_ssm_role"
 
@@ -86,12 +89,12 @@ resource "aws_instance" "main" {
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.main.id
   security_groups        = [aws_security_group.main.name]
-  key_name               = aws_key_pair.main.key_name
+  key_name = var.key_name
   iam_instance_profile   = aws_iam_instance_profile.main.name
 
   user_data = <<-EOF
               <powershell>
-              net user Administrator ${var.admin_password}
+              net user Administrator ${random_password.password.result}
               </powershell>
               EOF
 

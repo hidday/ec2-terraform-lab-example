@@ -17,3 +17,14 @@ output "hostname" {
   description = "The public DNS name of the EC2 instance"
   value       = aws_instance.main.public_dns
 }
+
+output "username" {
+  description = "The username of the EC2 instance"
+  value       = "Administrator"
+}
+
+output "password" {
+  description = "The password of the EC2 instance"
+  value       = random_password.password.result
+  sensitive   = false
+}
