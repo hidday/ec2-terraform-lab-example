@@ -62,7 +62,20 @@ resource "aws_security_group" "main" {
   }
 }
 
+variable "create_role" {
+  description = "Flag to control whether the IAM role should be created"
+  type        = bool
+  default     = true
+}
+
+data "aws_iam_role" "existing" {
+  count = var.create_role ? 0 : 1
+  name  = "ec2_ssm_role"
+}
+
 resource "aws_iam_role" "main" {
+  count = var.create_role ? 1 : 0
+
   name = "ec2_ssm_role"
 
   assume_role_policy = jsonencode({
@@ -80,7 +93,7 @@ resource "aws_iam_role" "main" {
 }
 
 resource "aws_iam_role_policy_attachment" "ssm" {
-  role       = aws_iam_role.main.name
+  role       = var.create_role ? aws_iam_role.main[0].name : data.aws_iam_role.existing[0].name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
