@@ -26,7 +26,7 @@ output "username" {
 output "password" {
   description = "The password of the EC2 instance"
   value       = random_password.password.result
-  sensitive   = false
+  sensitive   = true
 }
 
 output "connection_type" {
