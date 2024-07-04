@@ -89,7 +89,7 @@ resource "aws_instance" "main" {
   instance_type          = var.instance_type
   subnet_id              = aws_subnet.main.id
   security_groups        = [aws_security_group.main.name]
-  key_name = var.keypair_name
+  key_name = var.ec2_instance_keypair
   iam_instance_profile   = aws_iam_instance_profile.main.name
 
   user_data = <<-EOF
