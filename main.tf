@@ -92,6 +92,11 @@ resource "aws_iam_role" "main" {
   })
 }
 
+resource "aws_iam_instance_profile" "main" {
+  name = "ec2_ssm_profile"
+  role = var.create_role ? aws_iam_role.main[0].name : data.aws_iam_role.existing[0].name
+}
+
 resource "aws_iam_role_policy_attachment" "ssm" {
   role       = var.create_role ? aws_iam_role.main[0].name : data.aws_iam_role.existing[0].name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
@@ -115,9 +120,4 @@ resource "aws_instance" "main" {
   tags = {
     Name = var.instance_name
   }
-}
-
-resource "aws_iam_instance_profile" "main" {
-  name = "ec2_ssm_profile"
-  role = aws_iam_role.main.name
 }
