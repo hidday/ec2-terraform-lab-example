@@ -24,8 +24,8 @@ output "username" {
 }
 
 output "password" {
-  description = "The password of the EC2 instance"
-  value       = random_password.password.result
+  description = "The password for the Administrator user on the EC2 instance"
+  value       = coalesce(var.admin_password, random_password.password.result)
   sensitive   = true
 }
 
