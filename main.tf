@@ -118,6 +118,9 @@ resource "aws_instance" "main" {
               </powershell>
               EOF
 
+  # Ensure the instance gets a public IP
+  associate_public_ip_address = true
+
   tags = {
     Name = var.instance_name
   }
