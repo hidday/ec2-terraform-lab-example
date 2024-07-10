@@ -12,6 +12,7 @@ provider "aws" {
 
 provider "random" {}
 
+data "aws_caller_identity" "current" {}
 
 module "iam_assumable_role" {
   source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
@@ -27,6 +28,24 @@ module "iam_assumable_role" {
   role_requires_mfa = false
 
   attach_admin_policy = true
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Effect = "Allow",
+        Principal = {
+          Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/sso.amazonaws.com/d-906765d90c"
+        },
+        Action = "sts:AssumeRoleWithWebIdentity",
+        Condition = {
+          StringEquals = {
+            "sso.amazonaws.com/sso/group": "arn:aws:sso:::group/906765d90c-08ca88e5-b5c0-4510-af1a-001a974ce5e4"
+          }
+        }
+      }
+    ]
+  })
 }
 
 resource "random_password" "password" {
