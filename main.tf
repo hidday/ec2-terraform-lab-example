@@ -12,40 +12,39 @@ provider "aws" {
 
 provider "random" {}
 
+# Get the current AWS account ID
 data "aws_caller_identity" "current" {}
 
-module "iam_assumable_role" {
-  source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
+# Get the IAM Identity Center ARN
+data "aws_ssoadmin_instances" "this" {}
 
-  trusted_role_arns = [
-    "arn:aws:iam::214514861431:root",
-    "arn:aws:sso:::group/906765d90c-08ca88e5-b5c0-4510-af1a-001a974ce5e4" // Strigo SSO Engineering group
-  ]
-
-  create_role = true
-
-  role_name         = "StrigoTestAssumableRole"
-  role_requires_mfa = false
-
-  attach_admin_policy = true
-
+# Create the IAM role
+resource "aws_iam_role" "test_assumable_role" {
+  name = "TestAssumableRole"
   assume_role_policy = jsonencode({
-    Version = "2012-10-17",
+    Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow",
+        Effect = "Allow"
+        Action = "sts:AssumeRoleWithSAML"
         Principal = {
-          Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/sso.amazonaws.com/d-906765d90c"
-        },
-        Action = "sts:AssumeRoleWithWebIdentity",
+          Federated = tolist(data.aws_ssoadmin_instances.this.arns)[0]
+        }
         Condition = {
           StringEquals = {
-            "sso.amazonaws.com/sso/group": "arn:aws:sso:::group/906765d90c-08ca88e5-b5c0-4510-af1a-001a974ce5e4"
+            "SAML:aud": "https://signin.aws.amazon.com/saml"
+            "${tolist(data.aws_ssoadmin_instances.this.identity_store_ids)[0]}:groups": "906765d90c-08ca88e5-b5c0-4510-af1a-001a974ce5e4"
           }
         }
       }
     ]
   })
+}
+
+# Attach the AdministratorAccess policy to the role
+resource "aws_iam_role_policy_attachment" "test_assumable_role_admin_policy" {
+  role       = aws_iam_role.test_assumable_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
 }
 
 resource "random_password" "password" {
