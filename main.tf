@@ -18,7 +18,7 @@ module "iam_assumable_role" {
 
   trusted_role_arns = [
     "arn:aws:iam::214514861431:root",
-    "arn:aws:sso:::group/ssoins-722397f1a32039aa/906765d90c-08ca88e5-b5c0-4510-af1a-001a974ce5e4" // Strigo SSO Engineering group
+    "arn:aws:sso:::group/906765d90c-08ca88e5-b5c0-4510-af1a-001a974ce5e4" // Strigo SSO Engineering group
   ]
 
   create_role = true
