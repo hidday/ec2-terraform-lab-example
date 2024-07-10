@@ -1,8 +1,33 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+    }
+  }
+}
+
 provider "aws" {
   region = var.region
 }
 
 provider "random" {}
+
+
+module "iam_assumable_role" {
+  source = "terraform-aws-modules/iam/aws//modules/iam-assumable-role"
+
+  trusted_role_arns = [
+    "arn:aws:iam::214514861431:root",
+    "arn:aws:sso:::group/ssoins-722397f1a32039aa/906765d90c-08ca88e5-b5c0-4510-af1a-001a974ce5e4" // Strigo SSO Engineering group
+  ]
+
+  create_role = true
+
+  role_name         = "StrigoTestAssumableRole"
+  role_requires_mfa = false
+
+  attach_admin_policy = true
+}
 
 resource "random_password" "password" {
   length           = 16
