@@ -15,9 +15,6 @@ provider "random" {}
 # Get the current AWS account ID
 data "aws_caller_identity" "current" {}
 
-# Get the IAM Identity Center ARN
-data "aws_ssoadmin_instances" "this" {}
-
 # Create the IAM role
 resource "aws_iam_role" "test_assumable_role" {
   name = "TestAssumableRole"
@@ -28,12 +25,14 @@ resource "aws_iam_role" "test_assumable_role" {
         Effect = "Allow"
         Action = "sts:AssumeRoleWithSAML"
         Principal = {
-          Federated = tolist(data.aws_ssoadmin_instances.this.arns)[0]
+          Federated = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:saml-provider/ssoins-722397f1a32039aa"
         }
         Condition = {
           StringEquals = {
             "SAML:aud": "https://signin.aws.amazon.com/saml"
-            "${tolist(data.aws_ssoadmin_instances.this.identity_store_ids)[0]}:groups": "906765d90c-08ca88e5-b5c0-4510-af1a-001a974ce5e4"
+          }
+          StringLike = {
+            "aws:PrincipalTag/sso:groupId": "906765d90c-08ca88e5-b5c0-4510-af1a-001a974ce5e4"
           }
         }
       }
