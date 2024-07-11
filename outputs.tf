@@ -33,3 +33,8 @@ output "connection_type" {
     description = "The connection type to the EC2 instance"
     value       = "rdp"
 }
+
+output "region" {
+  description = "The AWS region where resources are deployed"
+  value       = var.region
+}
