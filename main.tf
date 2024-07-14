@@ -1,8 +1,33 @@
-provider "aws" {
-  region = var.region
+terraform {
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "5.25.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "2.5.1"
+    }
+  }
+
 }
 
 provider "random" {}
+
+provider "aws" {
+  region = var.aws_location
+
+  default_tags {
+    tags = {
+      "creator" = var.creator_tag
+    }
+  }
+}
+
+locals {
+  ec2_name = "${var.creator_tag}_SQL_${var.environment}"
+}
 
 resource "random_password" "password" {
   length           = 16
@@ -10,60 +35,6 @@ resource "random_password" "password" {
   override_special = "_%@"
 }
 
-resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-}
-
-resource "aws_subnet" "main" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
-  map_public_ip_on_launch = true  # Enable automatic public IP assignment
-}
-
-resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
-}
-
-resource "aws_route_table" "main" {
-  vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.main.id
-  }
-}
-
-resource "aws_route_table_association" "main" {
-  subnet_id      = aws_subnet.main.id
-  route_table_id = aws_route_table.main.id
-}
-
-resource "aws_security_group" "main" {
-  vpc_id = aws_vpc.main.id
-
-  ingress {
-    from_port   = 3389
-    to_port     = 3389
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
 
 variable "create_role" {
   description = "Flag to control whether the IAM role should be created"
@@ -105,25 +76,42 @@ resource "aws_iam_role_policy_attachment" "ssm" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-resource "aws_instance" "main" {
-  ami                    = var.ami_id
-  instance_type          = var.instance_type
-  subnet_id              = aws_subnet.main.id
-  vpc_security_group_ids = [aws_security_group.main.id]  // Use security group ID
-  key_name               = var.ec2_instance_keypair
-  iam_instance_profile   = aws_iam_instance_profile.main.name
+module "fsxontap" {
+  source = "./modules/fsxn"
 
-  user_data = <<-EOF
-              <powershell>
-              $password = "${coalesce(var.admin_password, random_password.password.result)}"
-              net user Administrator $password
-              </powershell>
-              EOF
+  fsxn_password           = var.fsxn_password
+  fsxn_deployment_type    = "SINGLE_AZ_1"
+  fsxn_subnet_ids         = [aws_subnet.private_subnet[0].id, aws_subnet.private_subnet[1].id]
+  fsxn_security_group_ids = [aws_security_group.sg-fsx.id]
+  fsxn_volume_name_prefix = local.ec2_name
 
-  # Ensure the instance gets a public IP
-  associate_public_ip_address = true
+  creator_tag = var.creator_tag
+}
 
-  tags = {
-    Name = var.instance_name
-  }
+module "sqlserver" {
+  source = "./modules/ec2"
+
+  ec2_instance_name       = local.ec2_name
+  ec2_instance_type       = var.ec2_instance_type
+  ec2_instance_key_pair   = var.ec2_instance_keypair
+  iam_instance_profile   =  aws_iam_instance_profile.main.name
+  ec2_subnet_id           = aws_subnet.public_subnet[0].id
+  ec2_security_groups_ids = [aws_security_group.sg-fsx.id, aws_security_group.sg-AllowRemoteToEC2.id]
+  admin_password          = random_password.password.result
+
+  fsxn_password        = var.fsxn_password
+  fsxn_iscsi_ips       = module.fsxontap.fsx_svm_iscsi_endpoints
+  fsxn_svm             = module.fsxontap.fsx_svm.name
+  fsxn_management_ip   = module.fsxontap.fsx_management_management_ip
+  fsxn_sql_data_volume = module.fsxontap.fsx_sql_data_volume
+  fsxn_sql_log_volume  = module.fsxontap.fsx_sql_log_volume
+
+  sql_data_volume_drive_letter  = "D"
+  sql_log_volume_drive_letter   = "E"
+  sql_install_sample_database   = true
+  sevenzip_download_url         = var.sevenzip_download_url
+  sample_databasde_download_url = var.sample_databasde_download_url
+
+  creator_tag = var.creator_tag
+  depends_on  = [module.fsxontap]
 }
