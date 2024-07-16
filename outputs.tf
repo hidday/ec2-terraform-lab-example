@@ -45,7 +45,7 @@ output "private_ip" {
   value       = module.sqlserver.private_ip
 }
 
-output "hostname" {
+output "public_dns" {
   description = "The public DNS name of the EC2 instance"
   value       = module.sqlserver.public_dns
 }
