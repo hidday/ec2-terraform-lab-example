@@ -1,5 +1,5 @@
-creator_tag           = "Strigo-Netapp"
-environment           = "Netapp-Demo"
+creator_tag           = "Strigo_Netapp"
+environment           = "Netapp_Demo"
 aws_location          = "eu-west-1"
 availability_zones    = ["eu-west-1a", "eu-west-1b"]
 ec2_instance_type     = "t3.2xlarge"
