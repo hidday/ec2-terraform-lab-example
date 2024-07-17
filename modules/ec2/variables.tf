@@ -96,7 +96,7 @@ variable "fsxn_iscsi_ips" {
   type        = list(string)
 }
 
-variable "admin_password" {
+variable "administrator_password" {
   description = "The password for the Administrator user"
   type        = string
 }

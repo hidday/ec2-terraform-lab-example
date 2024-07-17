@@ -16,7 +16,7 @@ module "sqlserver" {
 
   user_data = <<EOT
     <powershell>
-       net user Administrator ${var.admin_password}
+       net user Administrator ${var.administrator_password}
 
        Function CreateDisk([string]$Drive, [string]$DriveLabel) {
           Set-Disk -UniqueId $disk.UniqueId -IsOffline $false 

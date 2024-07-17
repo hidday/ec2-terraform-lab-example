@@ -91,13 +91,13 @@ module "fsxontap" {
 module "sqlserver" {
   source = "./modules/ec2"
 
-  ec2_instance_name          = local.ec2_name
-  ec2_instance_type          = var.ec2_instance_type
-  ec2_instance_key_pair      = var.ec2_instance_keypair
-  aws_iam_instance_profile   = aws_iam_instance_profile.main.name
-  ec2_subnet_id              = aws_subnet.public_subnet[0].id
-  ec2_security_groups_ids    = [aws_security_group.sg-fsx.id, aws_security_group.sg-AllowRemoteToEC2.id]
-  admin_password             = random_password.password.result
+  ec2_instance_name                  = local.ec2_name
+  ec2_instance_type                  = var.ec2_instance_type
+  ec2_instance_key_pair              = var.ec2_instance_keypair
+  aws_iam_instance_profile            = aws_iam_instance_profile.main.name
+  ec2_subnet_id                      = aws_subnet.public_subnet[0].id
+  ec2_security_groups_ids            = [aws_security_group.sg-fsx.id, aws_security_group.sg-AllowRemoteToEC2.id]
+  administrator_password             = coalesce(var.admin_password, random_password.password.result)
 
   fsxn_password          = var.fsxn_password
   fsxn_iscsi_ips         = module.fsxontap.fsx_svm_iscsi_endpoints
