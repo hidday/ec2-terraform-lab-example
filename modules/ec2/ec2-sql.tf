@@ -9,7 +9,7 @@ module "sqlserver" {
   vpc_security_group_ids = var.ec2_security_groups_ids
   iam_instance_profile   = var.aws_iam_instance_profile
   monitoring             = false
-  ami                    = data.aws_ami.windows-sql-server.id
+  ami                    = "ami-0ea9247cd0d894528"
 
   # Ensure the instance gets a public IP
   associate_public_ip_address = true
@@ -31,7 +31,21 @@ module "sqlserver" {
                   Write-Host "New $DriveLabel Volume is created successfully and operational"
               }
           }
-      } 
+      }
+
+      Function Install7Zip {
+          if(!(Test-Path -Path "C:\Program Files\7-Zip\7z.exe")) {
+              Write-Host "7-Zip not found, downloading and installing."
+              $installerPath = "C:\7z-setup.exe"
+              $sevenZipDownloadUrl = "https://www.7-zip.org/a/7z1900-x64.exe"
+              Invoke-WebRequest -Uri $sevenZipDownloadUrl -OutFile $installerPath
+              Start-Process -FilePath $installerPath -Args "/S" -Verb RunAs -Wait
+              Remove-Item -Path $installerPath
+              Write-Host "7-Zip installed."
+          } else {
+              Write-Host "7-Zip is already installed."
+          }
+      }
 
       Function InstallSampleDatabase([string]$DataDrive,[string]$LogDrive) {
         $sampleDatabaseName = "StackOverflow"
@@ -42,6 +56,7 @@ module "sqlserver" {
         {
             try
             {
+
                 if(!(Test-Path -Path $DataDrive":\SO.7z")) {
                     Write-Host "Downloading Sample Database"
                     Start-BitsTransfer -Source "${var.sample_databasde_download_url}" -Destination $DataDrive":\SO.7z" -Confirm:$false -ErrorAction SilentlyContinue
@@ -333,6 +348,7 @@ module "sqlserver" {
           Write-Host "Default Database and Log Paths set correctly"
       }
       if($InstallSampleDB) {
+        Install7Zip
         InstallSampleDatabase -DataDrive $DataVolume.DriveLetter -LogDrive $LogVolume.DriveLetter
       }
     </powershell>
