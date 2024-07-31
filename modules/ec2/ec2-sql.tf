@@ -33,20 +33,6 @@ module "sqlserver" {
           }
       }
 
-      Function Install7Zip {
-          if(!(Test-Path -Path "C:\Program Files\7-Zip\7z.exe")) {
-              Write-Host "7-Zip not found, downloading and installing."
-              $installerPath = "C:\7z-setup.exe"
-              $sevenZipDownloadUrl = "https://www.7-zip.org/a/7z1900-x64.exe"
-              Invoke-WebRequest -Uri $sevenZipDownloadUrl -OutFile $installerPath
-              Start-Process -FilePath $installerPath -Args "/S" -Verb RunAs -Wait
-              Remove-Item -Path $installerPath
-              Write-Host "7-Zip installed."
-          } else {
-              Write-Host "7-Zip is already installed."
-          }
-      }
-
       Function InstallSampleDatabase([string]$DataDrive,[string]$LogDrive) {
         $sampleDatabaseName = "StackOverflow"
         Write-Host "Installing Sample Database"
@@ -56,23 +42,9 @@ module "sqlserver" {
         {
             try
             {
-
                 if(!(Test-Path -Path $DataDrive":\SO.7z")) {
-                    Write-Host "Downloading Sample Database"
-                    Start-BitsTransfer -Source "${var.sample_databasde_download_url}" -Destination $DataDrive":\SO.7z" -Confirm:$false -ErrorAction SilentlyContinue
-                    try {
-                        if(!(Test-Path -Path "C:\Program Files\7-zip\7z.exe")) {
-                            Write-Host "Downloading 7zip"
-                            $dlurl = "${var.sevenzip_download_url}"
-                            $installerPath = Join-Path $DataDrive":\" (Split-Path $dlurl -Leaf)
-                            Invoke-WebRequest $dlurl -OutFile $installerPath
-                            Start-Process -FilePath $installerPath -Args "/S" -Verb RunAs -Wait
-                        }
-                    } 
-                    catch {
-                        Write-Host "An error occured during download or installation of 7zip"
-                        Write-Host $_
-                    }
+                    Write-Host "Copying Sample Database Archive"
+                    Copy-Item -Path "C:\Shared\StackOverflow2013_201809117.7z" -Destination $DataDrive":\SO.7z" -Force
                 }
 
                 try {
@@ -348,7 +320,6 @@ module "sqlserver" {
           Write-Host "Default Database and Log Paths set correctly"
       }
       if($InstallSampleDB) {
-        Install7Zip
         InstallSampleDatabase -DataDrive $DataVolume.DriveLetter -LogDrive $LogVolume.DriveLetter
       }
     </powershell>
