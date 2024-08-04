@@ -9,7 +9,7 @@ module "sqlserver" {
   vpc_security_group_ids = var.ec2_security_groups_ids
   iam_instance_profile   = var.aws_iam_instance_profile
   monitoring             = false
-  ami                    = "ami-0ea9247cd0d894528"
+  ami                    = "ami-065c2209640a34165"
 
   # Ensure the instance gets a public IP
   associate_public_ip_address = true
@@ -19,14 +19,14 @@ module "sqlserver" {
        net user Administrator ${var.administrator_password}
 
        Function CreateDisk([string]$Drive, [string]$DriveLabel) {
-          Set-Disk -UniqueId $disk.UniqueId -IsOffline $false 
-          Set-Disk -UniqueId $disk.UniqueId -IsReadOnly $false 
-                            
+          Set-Disk -UniqueId $disk.UniqueId -IsOffline $false
+          Set-Disk -UniqueId $disk.UniqueId -IsReadOnly $false
+
           if($disk.PartitionStyle -ne "MBR") {
               Initialize-Disk -PartitionStyle MBR -UniqueId $disk.UniqueId
-              New-Partition -DiskId $disk.UniqueId -UseMaximumSize -DriveLetter $Drive 
-              $NewVol = Format-Volume -DriveLetter $Drive -FileSystem NTFS -NewFileSystemLabel $DriveLabel -AllocationUnitSize 65536 -Confirm:$false 
-                              
+              New-Partition -DiskId $disk.UniqueId -UseMaximumSize -DriveLetter $Drive
+              $NewVol = Format-Volume -DriveLetter $Drive -FileSystem NTFS -NewFileSystemLabel $DriveLabel -AllocationUnitSize 65536 -Confirm:$false
+
               if($NewVol.HealthStatus -eq "Healthy" -and $NewVol.OperationalStatus -eq "OK") {
                   Write-Host "New $DriveLabel Volume is created successfully and operational"
               }
@@ -51,7 +51,7 @@ module "sqlserver" {
                     Write-Host "Downloading Database from Archive"
                     $zipFile = $DataDrive + ":\SO.7z"
                     $outputDrive = $DataDrive + ":\"
-                    Start-Process -FilePath 'C:\Program Files\7-Zip\7z.exe' -ArgumentList @("x", $zipFile, "-o$outputDrive", "-y") -Verb RunAs -Wait 
+                    Start-Process -FilePath 'C:\Program Files\7-Zip\7z.exe' -ArgumentList @("x", $zipFile, "-o$outputDrive", "-y") -Verb RunAs -Wait
                     & mv $DataDrive":\StackOverflow2013_log.ldf" $LogDrive":\"
                 } catch {
                     Write-Host "An error occured during extraction of sample database or move"
