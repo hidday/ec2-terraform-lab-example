@@ -9,7 +9,7 @@ module "sqlserver" {
   vpc_security_group_ids = var.ec2_security_groups_ids
   iam_instance_profile   = var.aws_iam_instance_profile
   monitoring             = false
-  ami                    = "ami-065c2209640a34165"
+  ami                    = "ami-01ecc4deaec24c32e"
 
   # Ensure the instance gets a public IP
   associate_public_ip_address = true
